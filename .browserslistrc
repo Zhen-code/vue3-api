@@ -1,0 +1,23 @@
+# 支持市场份额超过 0.5% 的浏览器
+> 0.5%
+
+# 支持最近两个版本的主流浏览器
+last 2 versions
+
+# 支持仍在接收官方支持的浏览器
+not dead
+
+# 特定浏览器版本支持
+Firefox ESR
+not IE 11
+not op_mini all
+
+# 移动浏览器支持
+iOS >= 12
+Android >= 5
+
+# 确保支持 Safari >= 12
+Safari >= 12
+
+# 确保支持 Edge >= 79 (基于 Chromium 的版本)
+Edge >= 79
