@@ -1,6 +1,8 @@
 import {ShapeFlags} from "./ShapeFlags";
-import { reactive, ReactiveEffect } from "vue";
-import {queueJob} from "./scheduler";
+import { reactive } from "vue";
+import { setupRenderEffect } from './setupRenderEffect'
+import { shouldUpdateComponent, updateComponentPreRender } from './props'
+import { createComponentInstance, setupComponent } from './component'
 export const Text = Symbol("Text");
 export const Fragment = Symbol("Fragment");
 export const isSameVNodeType = (n1, n2) => {
@@ -24,7 +26,16 @@ export function createRenderer(options){
             patch(null,children[i],container);
         }
     }
-    const unmount = (vnode) =>{hostRemove(vnode.el)}
+    const unmount = (vnode) => {
+      const { shapeFlag } = vnode;
+       if (vnode.type === Fragment) {
+          // return unmountChildren(vnode.children);
+        } else if (shapeFlag & ShapeFlags.COMPONENT) {
+          // 组件移除
+          return unmount(vnode.component.subTree); // 移除组件
+        }
+      hostRemove(vnode.el)
+    }
     const mountElement = (vnode,container) =>{
         const {type,props,shapeFlag} = vnode
         let el = vnode.el = hostCreateElement(type); // 创建真实元素，挂载到虚拟节点上
@@ -219,39 +230,32 @@ export function createRenderer(options){
           patchElement(n1, n2); // 比较两个元素
         }
       };
-      const mountComponent = (n2, container, anchor) => {
-        // 组件初始化
-        const { render, data = () => ({}) } = n2.type;
-        const state = reactive(data());
-        const instance = {
-          state, // 组件的状态
-          isMounted: false, // 组件是否挂载
-          subTree: null, // 子树
-          update: null,
-          vnode: n2,
-        };
-        const componentUpdateFn = () => {
-          if (!instance.isMounted) {
-            const subTree = render.call(state, state);
-            patch(null, subTree, container, anchor);
-            instance.subTree = subTree;
-            instance.isMounted = true;
-          } else {
-            const subTree = render.call(state, state);
-            patch(instance.subTree, subTree, container, anchor);
-            instance.subTree = subTree;
-          }
-        };
-        const effect = new ReactiveEffect(componentUpdateFn, () => queueJob(update));
-        const update = (instance.update = () => effect.run());
-        update();
+      const mountComponent = (vnode, container, anchor) => {
+        // 1) 创建实例
+        const instance = (vnode.component = createComponentInstance(vnode));
+          // 2) 给实例赋值
+        setupComponent(instance);
+         // 3) 创建渲染effect及更新
+        setupRenderEffect(instance, container, anchor)
+      
     }
+    const updateComponent = (n1, n2) => {
+      const instance = (n2.component = n1.component);
+      if(shouldUpdateComponent(n1, n2)){
+        instance.next = n2 // 将新的虚拟节点放到next属性上
+        instance.update() // 属性变化手动调用更新方法
+      }
+      // const { props: prevProps } = n1;
+      // const { props: nextProps } = n2;
+      // updateProps(instance, prevProps, nextProps);
+    };
     const processComponent = (n1, n2, container, anchor) => {
       if(n1 == null){
         // 初始化
         mountComponent(n2,container,anchor);
       }else{
-        // 更新
+        // 组件更新逻辑
+        updateComponent(n1, n2);
       }
     }  
     const patch = (n1,n2,container, anchor = null) => {

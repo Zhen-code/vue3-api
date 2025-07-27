@@ -24,7 +24,12 @@ export const createVNode = (type,props,children = null)=>{
         let type = 0;
         if(Array.isArray(children)){ // 如果子节点是数组
             type = ShapeFlags.ARRAY_CHILDREN; // 16
-        }else{ // 如果子节点是字符串
+        }
+        else if(isObject(children)){
+            // 类型是插槽
+            type = ShapeFlags.SLOTS_CHILDREN;
+        }
+        else{ // 如果子节点是字符串
             children = String(children);
             type = ShapeFlags.TEXT_CHILDREN // 8
         }

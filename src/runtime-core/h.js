@@ -1,5 +1,5 @@
 import { isVNode, createVNode } from "./createVNode";
-const isObject = (val) => val !== null && typeof val === 'object'
+export const isObject = (val) => val !== null && typeof val === 'object'
 
 export function h(type, propsOrChildren, children) {
     const l = arguments.length;
