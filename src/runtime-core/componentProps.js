@@ -1,5 +1,5 @@
 import { reactive } from 'vue'
-export function initProps(instance, rawProps) {
+export function initProps(instance, rawProps) { // rawProps为h()的第二个参数，即props对象
   const props = {};
   const attrs = {};
   const options = instance.propsOptions || {}; // 获取组件用户的配置

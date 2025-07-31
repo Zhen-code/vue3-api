@@ -186,7 +186,7 @@ export function createRenderer(options){
       };
       
       const patchChildren = (n1, n2, el) => {
-        debugger
+        // debugger
         const c1 = n1 && n1.children;
         const c2 = n2.children;
         const prevShapeFlag = n1.shapeFlag;
@@ -233,14 +233,15 @@ export function createRenderer(options){
       const mountComponent = (vnode, container, anchor) => {
         // 1) 创建实例
         const instance = (vnode.component = createComponentInstance(vnode));
-          // 2) 给实例赋值
-        setupComponent(instance);
+          // 2) 给实例赋值 初始化响应式数据
+        setupComponent(instance); // 
          // 3) 创建渲染effect及更新
         setupRenderEffect(instance, container, anchor)
       
     }
     const updateComponent = (n1, n2) => {
       const instance = (n2.component = n1.component);
+      // props/slots
       if(shouldUpdateComponent(n1, n2)){
         instance.next = n2 // 将新的虚拟节点放到next属性上
         instance.update() // 属性变化手动调用更新方法
@@ -263,6 +264,7 @@ export function createRenderer(options){
         if(n1 == n2){ // same node
             return; 
         }
+        // debugger;
         if (n1 && !isSameVNodeType(n1, n2)) {
             // 有n1 是n1和n2不是同一个节点
             unmount(n1);
@@ -291,7 +293,6 @@ export function createRenderer(options){
         // }      
     }
     const render = (vnode,container) =>{
-        console.log(vnode);
         if(vnode == null){
             if(container._vnode){
                 unmount(container._vnode); // 找到对应的真实节点将其卸载
@@ -302,6 +303,7 @@ export function createRenderer(options){
         container._vnode = vnode; // 记录旧节点
     }
     return {
-        render
+        render,
+        patch
     }
 }

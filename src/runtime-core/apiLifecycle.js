@@ -1,3 +1,4 @@
+import { currentInstance, getCurrentInstance, setCurrentInstance } from "./component"
 export const LifecycleHooks = {
     BEFORE_MOUNT: 'bm',
     MOUNTED : 'm',
@@ -6,6 +7,7 @@ export const LifecycleHooks = {
 }
 function createHook(type){
     return (hook,target = currentInstance) =>{ // 调用的时候保存当前实例
+    debugger
         if(target){
             const hooks = target[type] || (target[type] = []);
             const wrappedHook = () =>{

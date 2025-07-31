@@ -1,23 +1,27 @@
 import { hasOwn } from './utils'
-import { proxyRefs } from 'vue'
-
+import { proxyRefs, reactive } from 'vue'
+import { initProps } from './componentProps'
+import { ShapeFlags } from './ShapeFlags'
+import { isObject } from './h'
 export let currentInstance = null;
 export const setCurrentInstance = (instance) => (currentInstance = instance);
 export const getCurrentInstance = () => currentInstance;
 export const unsetCurrentInstance = () => (currentInstance = null);
 export function createComponentInstance(vnode) {
-  const instance = {
-    // 组件的实例
+  const instance = {  // 组件的实例
+    vnode, // 虚拟节点对象（元素/组件）
     data: null,
-    vnode, // vue2的源码中组件的虚拟节点叫$vnode  渲染的内容叫_vnode
-    subTree: null, // vnode组件的虚拟节点   subTree渲染的组件内容
-    isMounted: false,
-    update: null,
     attrs: {},
     props: {},
-    proxy: null,
     propsOptions: vnode.type.props,
+
+    subTree: null, // vnode组件的虚拟节点   subTree渲染的组件内容
     slots: null, // 初始化插槽属性
+    
+    isMounted: false,
+    update: null,
+   
+    proxy: null, // 实例代理
   };
   return instance;
 }
@@ -36,8 +40,11 @@ function initSlots(instance, children) {
   }
 }
 const PublicInstanceProxyHandlers = {
+  // target：当前组件实例
   get(target, key) {
-    const { data, props, setupState } = target;
+    console.log('get', key);
+    // debugger;
+    const { data, props, setupState } = target; 
     if (data && hasOwn(data, key)) {
       return data[key];
     } else if (hasOwn(props, key)) {
@@ -48,7 +55,7 @@ const PublicInstanceProxyHandlers = {
     }
     const publicGetter = publicPropertiesMap[key];
     if (publicGetter) {
-      return publicGetter(target);
+      return publicGetter(target); // target就是当前组件实例
     }
   },
   set(target, key, value) {
@@ -67,7 +74,12 @@ const PublicInstanceProxyHandlers = {
   },
 };
 export function setupComponent(instance) {
-  const { props, type, children  } = instance.vnode;
+  /**
+   *   case 组件 vnode：
+   *    基础vnode数据 包含：1.type(组件对象) 2. component:实例（包含响应式组件处理数据）
+   */
+  
+  const { props, type, children  } = instance.vnode; 
   initProps(instance, props);
   initSlots(instance, children); // 初始化插槽
 
@@ -86,22 +98,24 @@ export function setupComponent(instance) {
     setCurrentInstance(instance); // 在调用setup的时候保存当前实例
     const setupResult = setup(instance.props, setupContext);
     unsetCurrentInstance();
-    console.log(setupResult);
-    if (typeof setupResult === 'function') {
+    // console.log(setupResult);
+    if (typeof setupResult === 'function') { // 组件setup返回值是render函数
       instance.render = setupResult;
     } else if (isObject(setupResult)) {
+      // setup返回值做代理
       instance.setupState = proxyRefs(setupResult); // 这里对返回值进行结构
     }
   }
 
   instance.proxy = new Proxy(instance, PublicInstanceProxyHandlers);
+  // debugger
   const data = type.data;
   if (data) {
-    if (!isFunction(data))
+    if (typeof data !== 'function')
       return console.warn("The data option must be a function.");
-    instance.data = reactive(data.call(instance.proxy));
+      instance.data = reactive(data.call(instance.proxy));
   }
     if (!instance.render) {
-    instance.render = type.render;
+    instance.render = type.render; // 组件setup没有render函数，使用默认的render函数
   }
 }

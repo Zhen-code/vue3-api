@@ -7,26 +7,27 @@ export function isVNode(value){
 }
 export const createVNode = (type,props,children = null)=>{
     const shapeFlag = isString(type)
-    ? ShapeFlags.ELEMENT
+    ? ShapeFlags.ELEMENT // 元素
     : isObject(type) // 组件对象
     ? ShapeFlags.STATEFUL_COMPONENT
     : 0;
     const vnode = { // 用来标识当前节点是一个虚拟节点
         __v_isVNode: true,
-        type, // 当前节点的元素类型
+        type, // 元素/组件对象/文本
         props, // 当前节点的属性
         key: props && props['key'], // 当前节点的key
         el: null, // 当前节点对应的真实dom
         children, // 当前节点的子节点
         shapeFlag // 当前节点的类型标识 1
     }
+    console.log(vnode, "createVNode vnode");
     if(children){ // 如果存在子节点
         let type = 0;
         if(Array.isArray(children)){ // 如果子节点是数组
             type = ShapeFlags.ARRAY_CHILDREN; // 16
         }
         else if(isObject(children)){
-            // 类型是插槽
+            // 对象类型则是插槽
             type = ShapeFlags.SLOTS_CHILDREN;
         }
         else{ // 如果子节点是字符串
