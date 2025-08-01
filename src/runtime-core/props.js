@@ -59,7 +59,7 @@ export function updateComponentPreRender(instance, next) {
   instance.next = null;
   instance.vnode = next;
   debugger;
-  updateProps(instance, instance.props, next.props);
+  updateProps(instance, instance.props, next.props || {});
   instance.slots = {};
   instance.slots = next.children
   // Object.assign(instance.slots, next.children); // 渲染前要更新插槽

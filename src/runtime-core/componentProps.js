@@ -1,4 +1,5 @@
 import { reactive } from 'vue'
+import { ShapeFlags } from './ShapeFlags'
 export function initProps(instance, rawProps) { // rawProps为h()的第二个参数，即props对象
   const props = {};
   const attrs = {};
@@ -15,4 +16,7 @@ export function initProps(instance, rawProps) { // rawProps为h()的第二个参
   }
   instance.props = reactive(props); // 这里应该用shallowReactive，遵循单向数据流原则
   instance.attrs = attrs;
+  if(instance.vnode.shapeFlag & ShapeFlags.FUNCTIONAL_COMPONENT) {
+    instance.props = attrs
+  }
 }

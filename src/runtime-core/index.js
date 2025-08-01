@@ -3,6 +3,7 @@ import { reactive } from "vue";
 import { setupRenderEffect } from './setupRenderEffect'
 import { shouldUpdateComponent, updateComponentPreRender } from './props'
 import { createComponentInstance, setupComponent } from './component'
+import { isKeepAlive } from './KeepAlive'
 export const Text = Symbol("Text");
 export const Fragment = Symbol("Fragment");
 export const isSameVNodeType = (n1, n2) => {
@@ -26,13 +27,16 @@ export function createRenderer(options){
             patch(null,children[i],container);
         }
     }
-    const unmount = (vnode) => {
+    const unmount = (vnode, parentComponent) => {
       const { shapeFlag } = vnode;
        if (vnode.type === Fragment) {
           // return unmountChildren(vnode.children);
         } else if (shapeFlag & ShapeFlags.COMPONENT) {
           // 组件移除
           return unmount(vnode.component.subTree); // 移除组件
+        }else if(shapeFlag & ShapeFlags.COMPONENT_SHOULD_KEEP_ALIVE){
+          parentComponent?.ctx?.deactivate(vnode);
+          return;
         }
       hostRemove(vnode.el)
     }
@@ -230,13 +234,23 @@ export function createRenderer(options){
           patchElement(n1, n2); // 比较两个元素
         }
       };
-      const mountComponent = (vnode, container, anchor) => {
+      const mountComponent = (vnode, container, anchor, parentComponent = null) => {
         // 1) 创建实例
-        const instance = (vnode.component = createComponentInstance(vnode));
-          // 2) 给实例赋值 初始化响应式数据
+        const instance = (vnode.component = createComponentInstance(vnode, parentComponent));
+        if(isKeepAlive(vnode)){
+          instance.ctx.renderer = {
+            patch,
+            createElement:hostCreateElement,
+            move(vnode,container){
+              hostInsert(vnode.component.subTree.el,container)
+            },
+            unmount
+          }
+        }  
+        // 2) 给实例赋值 初始化响应式数据
         setupComponent(instance); // 
          // 3) 创建渲染effect及更新
-        setupRenderEffect(instance, container, anchor)
+        setupRenderEffect(instance, container, anchor, instance)
       
     }
     const updateComponent = (n1, n2) => {
@@ -250,16 +264,31 @@ export function createRenderer(options){
       // const { props: nextProps } = n2;
       // updateProps(instance, prevProps, nextProps);
     };
-    const processComponent = (n1, n2, container, anchor) => {
+    const processComponent = (n1, n2, container, anchor, parentComponent = null) => {
       if(n1 == null){
+        if (n2.shapeFlag & ShapeFlags.COMPONENT_KEPT_ALIVE) {
+          parentComponent.ctx.activate(n2, container, anchor);
+        } else{
         // 初始化
-        mountComponent(n2,container,anchor);
+          mountComponent(n2,container,anchor,parentComponent);
+        }
       }else{
         // 组件更新逻辑
         updateComponent(n1, n2);
       }
+    }
+    function setRef(rawRef, vnode) {
+      const refValue =
+        vnode.shapeFlag & ShapeFlags.STATEFUL_COMPONENT
+          ? vnode.component.exposed || vnode.component?.proxy
+          : vnode.el;
+    
+      if (rawRef) {
+        rawRef.value = refValue;
+      }
     }  
-    const patch = (n1,n2,container, anchor = null) => {
+    function patch (n1,n2,container, anchor = null,parentComponent = null) {
+      debugger;
         // 初始化和diff算法都在这里喲
         if(n1 == n2){ // same node
             return; 
@@ -281,9 +310,15 @@ export function createRenderer(options){
             default:
                // diff算法
               if(shapeFlag & ShapeFlags.ELEMENT){
-                processElement(n1, n2, container, anchor); // 处理元素
+                processElement(n1, n2, container, anchor,parentComponent); // 处理元素
               }else if(shapeFlag & ShapeFlags.COMPONENT){
-                processComponent(n1, n2, container, anchor); // 封装对元素的处理逻辑
+                processComponent(n1, n2, container, anchor,parentComponent); // 封装对元素的处理逻辑
+              }
+              if(n2 && n2.ref) { // 绑定了ref获取元素
+              // debugger
+
+                // 新ref 和 老ref
+               setRef(n2.ref, n2);
               }
           }
         // if(n1 == null){ // 初始化的情况
@@ -298,7 +333,7 @@ export function createRenderer(options){
                 unmount(container._vnode); // 找到对应的真实节点将其卸载
              } // 卸载
         }else{
-            patch(container._vnode || null,vnode,container); // 初始化和更新
+            patch(container._vnode || null,vnode,container,null, null); // 初始化和更新
         }
         container._vnode = vnode; // 记录旧节点
     }

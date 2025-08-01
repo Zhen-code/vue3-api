@@ -10,6 +10,8 @@ export const createVNode = (type,props,children = null)=>{
     ? ShapeFlags.ELEMENT // 元素
     : isObject(type) // 组件对象
     ? ShapeFlags.STATEFUL_COMPONENT
+    : typeof type === 'function'
+    ? ShapeFlags.FUNCTIONAL_COMPONENT
     : 0;
     const vnode = { // 用来标识当前节点是一个虚拟节点
         __v_isVNode: true,
@@ -18,7 +20,8 @@ export const createVNode = (type,props,children = null)=>{
         key: props && props['key'], // 当前节点的key
         el: null, // 当前节点对应的真实dom
         children, // 当前节点的子节点
-        shapeFlag // 当前节点的类型标识 1
+        shapeFlag, // 当前节点的类型标识 1
+        ref: props && props.ref, // 提取ref
     }
     console.log(vnode, "createVNode vnode");
     if(children){ // 如果存在子节点

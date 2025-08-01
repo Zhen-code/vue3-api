@@ -7,7 +7,7 @@ export let currentInstance = null;
 export const setCurrentInstance = (instance) => (currentInstance = instance);
 export const getCurrentInstance = () => currentInstance;
 export const unsetCurrentInstance = () => (currentInstance = null);
-export function createComponentInstance(vnode) {
+export function createComponentInstance(vnode, parent) {
   const instance = {  // 组件的实例
     vnode, // 虚拟节点对象（元素/组件）
     data: null,
@@ -22,6 +22,11 @@ export function createComponentInstance(vnode) {
     update: null,
    
     proxy: null, // 实例代理
+
+    parent,
+    provides: parent ? parent.provides : Object.create(null), // 创建一个provides对象
+
+    ctx: {}, // instance上下文
   };
   return instance;
 }
@@ -94,6 +99,7 @@ export function setupComponent(instance) {
             // 触发方法执行
             handler && handler(...args);
         },
+        slots: instance.slots,
     };
     setCurrentInstance(instance); // 在调用setup的时候保存当前实例
     const setupResult = setup(instance.props, setupContext);
