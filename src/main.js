@@ -162,7 +162,7 @@ const My2 = {
   },
 };
 // keepAlive会对渲染的组件进行缓存
-debugger
+// debugger
 render(
   h(KeepAlive, null, {
     default: () => h(My1), // 缓存1

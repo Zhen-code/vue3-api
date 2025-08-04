@@ -14,6 +14,8 @@ const { patch } = createRenderer(renderOptions)
 export function renderComponentRoot(instance) {
   let { render, proxy, vnode, props } = instance;
   if (vnode.shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+    debugger
+    console.log(proxy);
     return render.call(proxy, proxy);
   } else {
     return vnode.type(props); // 函数式组件直接调用即可
@@ -36,7 +38,7 @@ export const setupRenderEffect = (instance, container, anchor, parentComponent) 
       const subTree = renderComponentRoot(instance);
       // debugger;
       // console.log(subTree, 'subTree'); instance:父组件
-      debugger;
+      // debugger;
       patch(null, subTree, container, anchor, parentComponent); // 创造了subTree的真实节点并且插入了
       instance.subTree = subTree;
       instance.isMounted = true;
@@ -48,6 +50,7 @@ export const setupRenderEffect = (instance, container, anchor, parentComponent) 
       /**
        * next：新vnode n2
        */
+      debugger;
       let { next, bu, u } = instance;
        if (next) {
         updateComponentPreRender(instance, next);

@@ -288,7 +288,7 @@ export function createRenderer(options){
       }
     }  
     function patch (n1,n2,container, anchor = null,parentComponent = null) {
-      debugger;
+      // debugger;
         // 初始化和diff算法都在这里喲
         if(n1 == n2){ // same node
             return; 

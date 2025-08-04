@@ -58,7 +58,7 @@ export function updateComponentPreRender(instance, next) {
   console.log("updateComponentPreRender");
   instance.next = null;
   instance.vnode = next;
-  debugger;
+  // debugger;
   updateProps(instance, instance.props, next.props || {});
   instance.slots = {};
   instance.slots = next.children

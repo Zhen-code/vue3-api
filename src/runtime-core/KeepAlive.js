@@ -2,6 +2,7 @@ import { getCurrentInstance } from "./component";
 import {  onMounted,  onUpdated  } from "./apiLifecycle"
 import { ShapeFlags } from './ShapeFlags'
 import { isVNode } from './createVNode'
+import { toRaw, markRaw } from 'vue'
 export const KeepAliveImpl = {
     // keepAlive本身没有任何功能
     __isKeepAlive: true,
@@ -10,7 +11,7 @@ export const KeepAliveImpl = {
         exclude: [String, RegExp, Array],
         max: [String, Number],
     },
-    setup(props, { slots }) {
+    setup(props, {slots}) {
       
         const keys = new Set(); // 缓存的key
         const cache = new Map(); // 缓存key对应的虚拟节点
@@ -22,8 +23,15 @@ export const KeepAliveImpl = {
         };
         onMounted(cacheSubtree);
         onUpdated(cacheSubtree); // 在更新时进行重新缓存
-      return () => {
-        let vnode = slots.default();
+      return (proxy) => {
+        let vnode;
+        // if(this.isMounted === true) {
+        //     vnode = this.slots?.default() || null;
+        // }else{
+        //     vnode = slots.default();
+        // }
+        
+        vnode = proxy?.$slots?.default();
         const max = props.max || 2;
         debugger;
         if (
@@ -46,7 +54,8 @@ export const KeepAliveImpl = {
             let { createElement, move, unmount: _unmount } = instance.ctx.renderer;
             const storageContainer = createElement("div"); // 缓存盒子
             instance.ctx.activate = (vnode, container, anchor) => {
-                // 激活则移动到容器中
+                
+              // 激活则移动到容器中
                 move(vnode, container, anchor);
             };
             instance.ctx.deactivate = (vnode) => {

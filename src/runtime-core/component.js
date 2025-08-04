@@ -102,6 +102,7 @@ export function setupComponent(instance) {
         slots: instance.slots,
     };
     setCurrentInstance(instance); // 在调用setup的时候保存当前实例
+    // debugger;
     const setupResult = setup(instance.props, setupContext);
     unsetCurrentInstance();
     // console.log(setupResult);
